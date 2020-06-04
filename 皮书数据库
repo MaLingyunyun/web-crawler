@@ -1,0 +1,71 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.keys import Keys
+import pdb
+from selenium.webdriver.common.action_chains import ActionChains
+
+webdriver_path = r'C:\Users\修羽\PycharmProjects\皮书\venv\Lib\site-packages\selenium\chromedriver.exe'
+
+    ##You can download Chrome drivers from this website: https://chromedriver.chromium.org/downloads
+
+
+
+def create_browser(webdriver_path):
+    #create a selenium object that mimics the browser
+    browser_options = Options()
+    # #headless tag created an invisible browser
+    #browser_options.add_argument("--headless")
+    browser_options.add_argument('--no-sandbox')
+    browser = webdriver.Chrome(webdriver_path, chrome_options=browser_options)
+    print("Done Creating Browser")
+    return browser
+
+
+
+#INITIAtE BROWSER
+browser = create_browser(webdriver_path)
+
+#PASS SECURITY LOG-ON
+url = 'https://www.pishu.com.cn/'
+browser.get(url)
+
+#THIS IS WHERE THE CODE STOPS AND YOU HAVE TO LOG-IN MANUALLY
+#THEN NAVIGATE TO THE MAIN SIDE
+#AND THEN
+pdb.set_trace()
+
+
+
+
+#NOW  LOG IN MANUALLY
+# AFTER YOU LOGGED IN MANUALLY, go to the main site, then PRESS 'c' on the CONSOLE
+
+browser.find_element_by_id("Literature").click()                                    #here you select the appropriate menu you want to search
+browser.find_element_by_id("db_query").send_keys('海洋发展与沿海社会文化建设')        #and you send the command
+browser.find_element_by_id("db_query").send_keys(Keys.ENTER)                        #you might want to do a loop for all of the topics you want to search for starting here
+browser.implicitly_wait(5)
+
+
+
+link = browser.find_element_by_css_selector(".searCon_tit a")                       #in this section you are choosing the title and gettin the href from it
+browser.get(link.get_attribute("href"))                                             #you might want to open this in another window and then have it closed
+button1 = browser.find_elements_by_css_selector("#userBuy .BuyCar")[1]              #once open, the options you want are selected and the buttons pressed
+button1.click()
+button2 = browser.find_element_by_id("b")
+button2.click()
+
+
+print(browser.find_element_by_tag_name("body").text)                                #this prints out the text in the body of the html
+print(browser.find_element_by_tag_name("html").text)                                # this prints out the text on the whole html --> body does not contain everything                                                                                 #this leaves you with quite rough string-output, but maybe you can format that easier, hmm
+#print(browser.find_element_by_tag_name("html").get_attribute("innerHTML"))                                #you could also maybe get the whole innerhtml with html.getattribute(innerHtml) and then parse it with BeautifulSoup? it might work
+
+
+
+#WRITE YOUR  CODE FOR INTERACTING WITH THE WEBSITE HERE
+#WRITE YOUR  CODE FOR INTERACTING WITH THE WEBSITE HERE
+#WRITE YOUR  CODE FOR INTERACTING WITH THE WEBSITE HERE
+
+
+
+browser.quit()
+print('finished')
