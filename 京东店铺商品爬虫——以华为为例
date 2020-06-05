@@ -1,0 +1,84 @@
+import requests
+import re
+import random
+import time
+import json
+import pymysql
+from sqlalchemy import create_engine
+#from requests.packages.urllib3.exceptions import InsecureRequestWarning
+import urllib3
+import pandas as pd
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+#requests.packages.urllib3.disable_warnings(InsecureRequestWarning)  ###禁止提醒SSL警告
+
+
+class jd(object):
+    def __init__(self):
+
+        self.s = requests.session()  ## 创建一个session对象
+        headers = {
+            'accept': 'application/json, text/javascript, */*; q=0.01',
+            'accept-encoding': 'gzip, deflate, br',
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1',
+        }
+        self.s.headers.update(headers)  ### 设置请求头
+        # self.engine = create_engine('mysql+pymysql://root:123456@192.168.0.1:3306/jd')   ##存储到SQL
+
+    def getdata(self, url, name):
+
+        getdate = time.strftime("%Y-%m-%d", time.localtime())
+        self.shopid = re.search('index-(.*?).html', url).group(1)  ###获取店铺ID号
+        self.s.get('https://shop.m.jd.com/search/search?shopId=' + str(self.shopid))
+
+        for i in range(1, 10000):  ###爬取页数范围   没有找到商品后会自动退出循环
+            wareId_list = []
+            wname_list = []
+            jdPrice_list = []
+            time.sleep(random.random())  ##随机延时0-1秒
+            t = int(time.time() * 1000)
+            ##           https://wqsou.jd.com/search/searchjson?datatype=1&page=2&pagesize=40&merge_sku=yes&qp_disable=yes&key=ids%2C%2C121614&_=1537524375713&sceneval=2&g_login_type=1&callback=jsonpCBKQ&g_ty=ls
+            searchurl = 'https://wqsou.jd.com/search/searchjson?datatype=1&page={}&pagesize=40&merge_sku=yes&qp_disable=yes&key=ids%2C%2C{}&_={}&sceneval=2&g_login_type=1&callback=jsonpCBKA&g_ty=ls'.format(
+                i, self.shopid, t)  ##请求数据网址
+            print(searchurl)
+            req = self.s.get(url=searchurl, verify=False).text  ###获取数据
+            print(req)
+            print(name, i)
+            wareId = re.findall('"wareid": "(.*?)",', req)  ##获取商品ID
+            wname = re.findall('"warename": "(.*?)",', req)  ###获取商品名称
+            jdPrice = re.findall('"dredisprice": "(.*?)",', req)  ###获取商品价格
+
+            if wareId == []:  ###如果没有找到ID退出循环
+                break
+
+            #####处理数据
+            wareId_list.extend(wareId)
+            wname_list.extend(wname)
+            jdPrice_list.extend(jdPrice)
+            wareId_l = len(wareId_list)
+            name_list = []
+            name_list.append(name)
+            name_list.extend(name_list * (wareId_l - 1))
+            getdate_list = []
+            getdate_list.append(getdate)
+            getdate_list.extend(getdate_list * (wareId_l - 1))
+
+            jddata = {
+                'name': name_list,
+                'wareId': wareId_list,
+                'wname': wname_list,
+                'jdPrice': jdPrice_list,
+                'update': getdate_list
+            }
+
+            df = pd.DataFrame(data=jddata)
+            df.to_csv(r'e:\jd_huawei_mall.csv', mode='a', index=False, encoding="GB18030")  ###保存csv文件r"平均值12.csv",mode = 'a',index =False
+            # df.to_sql('店铺前端', con=self.engine, if_exists='append', index=False)  ##上传到数据库
+
+
+if __name__ == '__main__':
+    j = jd()
+    url = 'https://mall.jd.com/index-1000004259.html'
+    nm = 'huawei'
+    j.getdata(url, nm)
